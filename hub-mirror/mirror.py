@@ -1,6 +1,10 @@
 import re
 import shutil
 import os
+import locale
+import codecs
+import subprocess
+from subprocess import PIPE
 
 import git
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -105,3 +109,26 @@ class Mirror(object):
                 git_cmd.lfs("push", self.hub.dst_type, "--all")
             cmd = ['-f'] + cmd
             local_repo.git.push(*cmd, kill_after_timeout=self.timeout)
+
+    @retry(wait=wait_exponential(), reraise=True, stop=stop_after_attempt(3))
+    def execute_shell(self, shell_command=''):
+        if shell_command == '':
+            print("no shell command to execute.")
+            return
+        local_repo = git.Repo(self.repo_path)
+        if self._check_empty(local_repo):
+            print("Empty repo %s, skip pushing." % self.src_url)
+            return
+        commands = shell_command.split('\n')
+        shell_command = ' && '.join(commands[:-1])
+        shell_command = f'cd {self.repo_path} && {shell_command}'
+        print("Execute shell_command = " + shell_command)
+        r = subprocess.Popen(shell_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        while True:
+            line = r.stdout.readline()
+            printStr = line.decode(codecs.lookup(locale.getpreferredencoding()).name).strip("b'")
+            if printStr != '' and printStr != ' ' and printStr != '\n':
+                print(printStr)
+            if line == b'' or subprocess.Popen.poll(r) == 0:
+                r.stdout.close()
+                break
