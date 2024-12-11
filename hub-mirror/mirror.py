@@ -122,7 +122,7 @@ class Mirror(object):
         commands = shell_command.split('\n')
         commands = [cmd for cmd in commands if cmd.strip()]
 
-        shell_command = ' && '.join(commands[:-1])
+        shell_command = ' && '.join(commands)
         shell_command = f'cd {self.repo_path} && {shell_command}'
         print("Execute shell_command = " + shell_command)
         r = subprocess.Popen(shell_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
