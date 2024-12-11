@@ -120,6 +120,8 @@ class Mirror(object):
             print("Empty repo %s, skip pushing." % self.src_url)
             return
         commands = shell_command.split('\n')
+        commands = [cmd for cmd in commands if cmd.strip()]
+
         shell_command = ' && '.join(commands[:-1])
         shell_command = f'cd {self.repo_path} && {shell_command}'
         print("Execute shell_command = " + shell_command)
